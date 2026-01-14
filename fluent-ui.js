@@ -1,159 +1,73 @@
 // Fluent UI Library for Tampermonkey Scripts
-// Version: 1.0.0
+// Version: 1.0.0 - Pure JavaScript
 
-interface WindowConfig {
-  Title: string;
-  SubTitle?: string;
-  TabWidth?: number;
-  Size?: { width: number; height: number };
-  Acrylic?: boolean;
-  Theme?: 'Dark' | 'Light';
-  MinimizeKey?: string;
-}
-
-interface TabConfig {
-  Title: string;
-  Icon?: string;
-}
-
-interface NotificationConfig {
-  Title: string;
-  Content: string;
-  SubContent?: string;
-  Duration?: number | null;
-}
-
-interface ButtonConfig {
-  Title: string;
-  Description?: string;
-  Callback: () => void;
-}
-
-interface ToggleConfig {
-  Title: string;
-  Description?: string;
-  Default?: boolean;
-}
-
-interface SliderConfig {
-  Title: string;
-  Description?: string;
-  Default?: number;
-  Min: number;
-  Max: number;
-  Rounding?: number;
-  Callback?: (value: number) => void;
-}
-
-interface DropdownConfig {
-  Title: string;
-  Description?: string;
-  Values: string[];
-  Multi?: boolean;
-  Default?: number | string | string[];
-}
-
-interface ColorpickerConfig {
-  Title: string;
-  Description?: string;
-  Default?: string;
-  Transparency?: number;
-}
-
-interface KeybindConfig {
-  Title: string;
-  Mode?: 'Always' | 'Toggle' | 'Hold';
-  Default?: string;
-  Callback?: (value: boolean) => void;
-  ChangedCallback?: (key: string) => void;
-}
-
-interface InputConfig {
-  Title: string;
-  Default?: string;
-  Placeholder?: string;
-  Numeric?: boolean;
-  Finished?: boolean;
-  Callback?: (value: string) => void;
-}
-
-interface ParagraphConfig {
-  Title: string;
-  Content: string;
-}
-
-interface DialogConfig {
-  Title: string;
-  Content: string;
-  Buttons: Array<{
-    Title: string;
-    Callback: () => void;
-  }>;
-}
-
-class FluentOption<T> {
-  public Value: T;
-  private callbacks: ((value: T) => void)[] = [];
-
-  constructor(defaultValue: T) {
+class FluentOption {
+  constructor(defaultValue) {
     this.Value = defaultValue;
+    this.callbacks = [];
   }
 
-  SetValue(value: T) {
+  SetValue(value) {
     this.Value = value;
     this.callbacks.forEach(cb => cb(value));
   }
 
-  OnChanged(callback: (value: T) => void) {
+  OnChanged(callback) {
     this.callbacks.push(callback);
   }
 }
 
-class FluentToggle extends FluentOption<boolean> {
-  OnChanged(callback: () => void) {
+class FluentToggle extends FluentOption {
+  OnChanged(callback) {
     super.OnChanged(callback);
   }
 }
 
-class FluentSlider extends FluentOption<number> {
-  OnChanged(callback: (value: number) => void) {
+class FluentSlider extends FluentOption {
+  OnChanged(callback) {
     super.OnChanged(callback);
   }
 }
 
-class FluentDropdown extends FluentOption<string | string[]> {
-  OnChanged(callback: (value: string | string[]) => void) {
+class FluentDropdown extends FluentOption {
+  OnChanged(callback) {
     super.OnChanged(callback);
   }
 }
 
-class FluentColorpicker extends FluentOption<string> {
-  public Transparency: number = 1;
+class FluentColorpicker extends FluentOption {
+  constructor(defaultValue) {
+    super(defaultValue);
+    this.Transparency = 1;
+  }
 
-  SetValueRGB(color: string) {
+  SetValueRGB(color) {
     this.SetValue(color);
   }
 }
 
-class FluentKeybind extends FluentOption<string> {
-  private state: boolean = false;
-  private mode: 'Always' | 'Toggle' | 'Hold' = 'Toggle';
-  private clickCallbacks: (() => void)[] = [];
+class FluentKeybind extends FluentOption {
+  constructor(defaultValue) {
+    super(defaultValue);
+    this.state = false;
+    this.mode = 'Toggle';
+    this.clickCallbacks = [];
+  }
 
-  SetValue(key: string, mode?: 'Always' | 'Toggle' | 'Hold') {
+  SetValue(key, mode) {
     super.SetValue(key);
     if (mode) this.mode = mode;
   }
 
-  GetState(): boolean {
+  GetState() {
     return this.state;
   }
 
-  SetState(state: boolean) {
+  SetState(state) {
     this.state = state;
   }
 
-  OnClick(callback: () => void) {
+  OnClick(callback) {
     this.clickCallbacks.push(callback);
   }
 
@@ -162,37 +76,33 @@ class FluentKeybind extends FluentOption<string> {
   }
 }
 
-class FluentInput extends FluentOption<string> {
-  OnChanged(callback: () => void) {
+class FluentInput extends FluentOption {
+  OnChanged(callback) {
     super.OnChanged(callback);
   }
 }
 
 class FluentTab {
-  private Title: string;
-  private Icon?: string;
-  private content: HTMLElement;
-  private elements: HTMLElement[] = [];
-
-  constructor(config: TabConfig, content: HTMLElement) {
+  constructor(config, content) {
     this.Title = config.Title;
     this.Icon = config.Icon;
     this.content = content;
+    this.elements = [];
   }
 
-  getTitle(): string {
+  getTitle() {
     return this.Title;
   }
 
-  getIcon(): string | undefined {
+  getIcon() {
     return this.Icon;
   }
 
-  getContent(): HTMLElement {
+  getContent() {
     return this.content;
   }
 
-  AddParagraph(config: ParagraphConfig): void {
+  AddParagraph(config) {
     const element = document.createElement('div');
     element.className = 'fluent-paragraph';
     element.innerHTML = `
@@ -203,7 +113,7 @@ class FluentTab {
     this.elements.push(element);
   }
 
-  AddButton(config: ButtonConfig): void {
+  AddButton(config) {
     const element = document.createElement('div');
     element.className = 'fluent-button-container';
     element.innerHTML = `
@@ -214,15 +124,15 @@ class FluentTab {
       <button class="fluent-button">Click</button>
     `;
     
-    const button = element.querySelector('.fluent-button') as HTMLButtonElement;
+    const button = element.querySelector('.fluent-button');
     button.addEventListener('click', config.Callback);
     
     this.content.appendChild(element);
     this.elements.push(element);
   }
 
-  AddToggle(id: string, config: ToggleConfig): FluentToggle {
-    const toggle = new FluentToggle(config.Default ?? false);
+  AddToggle(id, config) {
+    const toggle = new FluentToggle(config.Default !== undefined ? config.Default : false);
     
     const element = document.createElement('div');
     element.className = 'fluent-toggle-container';
@@ -237,7 +147,7 @@ class FluentTab {
       </label>
     `;
     
-    const checkbox = element.querySelector('input') as HTMLInputElement;
+    const checkbox = element.querySelector('input');
     checkbox.addEventListener('change', () => {
       toggle.SetValue(checkbox.checked);
     });
@@ -252,8 +162,8 @@ class FluentTab {
     return toggle;
   }
 
-  AddSlider(id: string, config: SliderConfig): FluentSlider {
-    const slider = new FluentSlider(config.Default ?? config.Min);
+  AddSlider(id, config) {
+    const slider = new FluentSlider(config.Default !== undefined ? config.Default : config.Min);
     
     const element = document.createElement('div');
     element.className = 'fluent-slider-container';
@@ -263,13 +173,13 @@ class FluentTab {
         ${config.Description ? `<div class="fluent-control-description">${config.Description}</div>` : ''}
       </div>
       <div class="fluent-slider-wrapper">
-        <input type="range" min="${config.Min}" max="${config.Max}" step="${config.Rounding !== undefined ? Math.pow(10, -config.Rounding) : 1}" value="${config.Default ?? config.Min}" class="fluent-slider">
-        <span class="fluent-slider-value">${config.Default ?? config.Min}</span>
+        <input type="range" min="${config.Min}" max="${config.Max}" step="${config.Rounding !== undefined ? Math.pow(10, -config.Rounding) : 1}" value="${config.Default !== undefined ? config.Default : config.Min}" class="fluent-slider">
+        <span class="fluent-slider-value">${config.Default !== undefined ? config.Default : config.Min}</span>
       </div>
     `;
     
-    const input = element.querySelector('input') as HTMLInputElement;
-    const valueDisplay = element.querySelector('.fluent-slider-value') as HTMLSpanElement;
+    const input = element.querySelector('input');
+    const valueDisplay = element.querySelector('.fluent-slider-value');
     
     input.addEventListener('input', () => {
       const value = config.Rounding !== undefined 
@@ -291,7 +201,7 @@ class FluentTab {
     return slider;
   }
 
-  AddDropdown(id: string, config: DropdownConfig): FluentDropdown {
+  AddDropdown(id, config) {
     const defaultValue = config.Multi 
       ? (Array.isArray(config.Default) ? config.Default : [])
       : (typeof config.Default === 'number' ? config.Values[config.Default - 1] : (config.Default || config.Values[0]));
@@ -302,7 +212,7 @@ class FluentTab {
     element.className = 'fluent-dropdown-container';
     
     if (config.Multi) {
-      const selectedValues = new Set(defaultValue as string[]);
+      const selectedValues = new Set(defaultValue);
       
       element.innerHTML = `
         <div class="fluent-control-header">
@@ -325,10 +235,10 @@ class FluentTab {
         </div>
       `;
       
-      const trigger = element.querySelector('.fluent-dropdown-trigger') as HTMLElement;
-      const optionsContainer = element.querySelector('.fluent-dropdown-options') as HTMLElement;
-      const text = element.querySelector('.fluent-dropdown-text') as HTMLElement;
-      const checkboxes = element.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>;
+      const trigger = element.querySelector('.fluent-dropdown-trigger');
+      const optionsContainer = element.querySelector('.fluent-dropdown-options');
+      const text = element.querySelector('.fluent-dropdown-text');
+      const checkboxes = element.querySelectorAll('input[type="checkbox"]');
       
       trigger.addEventListener('click', () => {
         optionsContainer.style.display = optionsContainer.style.display === 'none' ? 'block' : 'none';
@@ -348,13 +258,11 @@ class FluentTab {
         });
       });
       
-      // Custom SetValue for multi-dropdown
       const originalSetValue = dropdown.SetValue.bind(dropdown);
-      dropdown.SetValue = (value: any) => {
+      dropdown.SetValue = (value) => {
         selectedValues.clear();
         
         if (typeof value === 'object' && !Array.isArray(value)) {
-          // Handle {three: true, five: true, seven: false} format
           Object.entries(value).forEach(([key, val]) => {
             if (val) selectedValues.add(key);
           });
@@ -382,13 +290,13 @@ class FluentTab {
         </select>
       `;
       
-      const select = element.querySelector('select') as HTMLSelectElement;
+      const select = element.querySelector('select');
       select.addEventListener('change', () => {
         dropdown.SetValue(select.value);
       });
       
       dropdown.OnChanged((value) => {
-        select.value = value as string;
+        select.value = value;
       });
     }
     
@@ -398,8 +306,8 @@ class FluentTab {
     return dropdown;
   }
 
-  AddColorpicker(id: string, config: ColorpickerConfig): FluentColorpicker {
-    const colorpicker = new FluentColorpicker(config.Default ?? '#60cdff');
+  AddColorpicker(id, config) {
+    const colorpicker = new FluentColorpicker(config.Default || '#60cdff');
     if (config.Transparency !== undefined) {
       colorpicker.Transparency = config.Transparency;
     }
@@ -412,8 +320,8 @@ class FluentTab {
         ${config.Description ? `<div class="fluent-control-description">${config.Description}</div>` : ''}
       </div>
       <div class="fluent-colorpicker-wrapper">
-        <input type="color" value="${config.Default ?? '#60cdff'}" class="fluent-colorpicker">
-        <span class="fluent-colorpicker-value">${config.Default ?? '#60cdff'}</span>
+        <input type="color" value="${config.Default || '#60cdff'}" class="fluent-colorpicker">
+        <span class="fluent-colorpicker-value">${config.Default || '#60cdff'}</span>
         ${config.Transparency !== undefined ? `
           <input type="range" min="0" max="1" step="0.01" value="${config.Transparency}" class="fluent-transparency-slider">
           <span class="fluent-transparency-value">${config.Transparency}</span>
@@ -421,8 +329,8 @@ class FluentTab {
       </div>
     `;
     
-    const colorInput = element.querySelector('.fluent-colorpicker') as HTMLInputElement;
-    const valueDisplay = element.querySelector('.fluent-colorpicker-value') as HTMLSpanElement;
+    const colorInput = element.querySelector('.fluent-colorpicker');
+    const valueDisplay = element.querySelector('.fluent-colorpicker-value');
     
     colorInput.addEventListener('input', () => {
       valueDisplay.textContent = colorInput.value;
@@ -430,14 +338,14 @@ class FluentTab {
     });
     
     if (config.Transparency !== undefined) {
-      const transparencySlider = element.querySelector('.fluent-transparency-slider') as HTMLInputElement;
-      const transparencyValue = element.querySelector('.fluent-transparency-value') as HTMLSpanElement;
+      const transparencySlider = element.querySelector('.fluent-transparency-slider');
+      const transparencyValue = element.querySelector('.fluent-transparency-value');
       
       transparencySlider.addEventListener('input', () => {
         const transparency = parseFloat(transparencySlider.value);
         transparencyValue.textContent = transparency.toFixed(2);
         colorpicker.Transparency = transparency;
-        colorpicker.SetValue(colorpicker.Value); // Trigger callbacks
+        colorpicker.SetValue(colorpicker.Value);
       });
     }
     
@@ -452,8 +360,8 @@ class FluentTab {
     return colorpicker;
   }
 
-  AddKeybind(id: string, config: KeybindConfig): FluentKeybind {
-    const keybind = new FluentKeybind(config.Default ?? 'None');
+  AddKeybind(id, config) {
+    const keybind = new FluentKeybind(config.Default || 'None');
     
     const element = document.createElement('div');
     element.className = 'fluent-keybind-container';
@@ -461,10 +369,10 @@ class FluentTab {
       <div class="fluent-control-header">
         <div class="fluent-control-title">${config.Title}</div>
       </div>
-      <button class="fluent-keybind-button">${config.Default ?? 'None'}</button>
+      <button class="fluent-keybind-button">${config.Default || 'None'}</button>
     `;
     
-    const button = element.querySelector('.fluent-keybind-button') as HTMLButtonElement;
+    const button = element.querySelector('.fluent-keybind-button');
     let isListening = false;
     
     button.addEventListener('click', () => {
@@ -475,7 +383,7 @@ class FluentTab {
       }
     });
     
-    const keyHandler = (e: KeyboardEvent) => {
+    const keyHandler = (e) => {
       if (isListening) {
         e.preventDefault();
         const key = e.key === ' ' ? 'Space' : e.key;
@@ -487,7 +395,7 @@ class FluentTab {
       }
       
       if (e.key === keybind.Value || (keybind.Value === 'Space' && e.key === ' ')) {
-        const mode = config.Mode ?? 'Toggle';
+        const mode = config.Mode || 'Toggle';
         
         if (mode === 'Always') {
           keybind.SetState(true);
@@ -506,8 +414,8 @@ class FluentTab {
       }
     };
     
-    const keyUpHandler = (e: KeyboardEvent) => {
-      if ((e.key === keybind.Value || (keybind.Value === 'Space' && e.key === ' ')) && (config.Mode ?? 'Toggle') === 'Hold') {
+    const keyUpHandler = (e) => {
+      if ((e.key === keybind.Value || (keybind.Value === 'Space' && e.key === ' ')) && (config.Mode || 'Toggle') === 'Hold') {
         keybind.SetState(false);
         if (config.Callback) config.Callback(false);
       }
@@ -526,8 +434,8 @@ class FluentTab {
     return keybind;
   }
 
-  AddInput(id: string, config: InputConfig): FluentInput {
-    const input = new FluentInput(config.Default ?? '');
+  AddInput(id, config) {
+    const input = new FluentInput(config.Default || '');
     
     const element = document.createElement('div');
     element.className = 'fluent-input-container';
@@ -537,11 +445,11 @@ class FluentTab {
       </div>
       <input type="${config.Numeric ? 'number' : 'text'}" 
              class="fluent-input" 
-             value="${config.Default ?? ''}" 
-             placeholder="${config.Placeholder ?? ''}">
+             value="${config.Default || ''}" 
+             placeholder="${config.Placeholder || ''}">
     `;
     
-    const inputElement = element.querySelector('input') as HTMLInputElement;
+    const inputElement = element.querySelector('input');
     
     if (config.Finished) {
       inputElement.addEventListener('keypress', (e) => {
@@ -569,26 +477,23 @@ class FluentTab {
 }
 
 class FluentWindow {
-  private config: WindowConfig;
-  private window: HTMLElement;
-  private tabs: Map<string, FluentTab> = new Map();
-  private tabButtons: Map<string, HTMLElement> = new Map();
-  private currentTab: string | null = null;
-  private isMinimized: boolean = false;
-
-  constructor(config: WindowConfig) {
+  constructor(config) {
     this.config = config;
+    this.tabs = new Map();
+    this.tabButtons = new Map();
+    this.currentTab = null;
+    this.isMinimized = false;
     this.window = this.createWindow();
     document.body.appendChild(this.window);
     this.setupMinimizeKey();
   }
 
-  private createWindow(): HTMLElement {
+  createWindow() {
     const container = document.createElement('div');
-    container.className = `fluent-window ${this.config.Theme?.toLowerCase() ?? 'dark'}`;
+    container.className = `fluent-window ${(this.config.Theme || 'Dark').toLowerCase()}`;
     container.style.cssText = `
-      width: ${this.config.Size?.width ?? 580}px;
-      height: ${this.config.Size?.height ?? 460}px;
+      width: ${(this.config.Size && this.config.Size.width) || 580}px;
+      height: ${(this.config.Size && this.config.Size.height) || 460}px;
     `;
     
     container.innerHTML = `
@@ -603,17 +508,15 @@ class FluentWindow {
         </div>
       </div>
       <div class="fluent-window-body">
-        <div class="fluent-tabs-container" style="width: ${this.config.TabWidth ?? 160}px;"></div>
+        <div class="fluent-tabs-container" style="width: ${this.config.TabWidth || 160}px;"></div>
         <div class="fluent-content-container"></div>
       </div>
     `;
     
-    // Setup draggable
     this.makeDraggable(container);
     
-    // Setup controls
-    const minimizeBtn = container.querySelector('.fluent-window-minimize') as HTMLElement;
-    const closeBtn = container.querySelector('.fluent-window-close') as HTMLElement;
+    const minimizeBtn = container.querySelector('.fluent-window-minimize');
+    const closeBtn = container.querySelector('.fluent-window-close');
     
     minimizeBtn.addEventListener('click', () => this.toggleMinimize());
     closeBtn.addEventListener('click', () => this.close());
@@ -621,8 +524,8 @@ class FluentWindow {
     return container;
   }
 
-  private makeDraggable(element: HTMLElement) {
-    const header = element.querySelector('.fluent-window-header') as HTMLElement;
+  makeDraggable(element) {
+    const header = element.querySelector('.fluent-window-header');
     let isDragging = false;
     let currentX = 0;
     let currentY = 0;
@@ -630,7 +533,7 @@ class FluentWindow {
     let initialY = 0;
     
     header.addEventListener('mousedown', (e) => {
-      if ((e.target as HTMLElement).tagName !== 'BUTTON') {
+      if (e.target.tagName !== 'BUTTON') {
         isDragging = true;
         initialX = e.clientX - currentX;
         initialY = e.clientY - currentY;
@@ -651,7 +554,7 @@ class FluentWindow {
     });
   }
 
-  private setupMinimizeKey() {
+  setupMinimizeKey() {
     if (this.config.MinimizeKey) {
       document.addEventListener('keydown', (e) => {
         if (e.key === this.config.MinimizeKey) {
@@ -662,26 +565,26 @@ class FluentWindow {
     }
   }
 
-  private toggleMinimize() {
+  toggleMinimize() {
     this.isMinimized = !this.isMinimized;
-    const body = this.window.querySelector('.fluent-window-body') as HTMLElement;
+    const body = this.window.querySelector('.fluent-window-body');
     
     if (this.isMinimized) {
       body.style.display = 'none';
       this.window.style.height = 'auto';
     } else {
       body.style.display = 'flex';
-      this.window.style.height = `${this.config.Size?.height ?? 460}px`;
+      this.window.style.height = `${(this.config.Size && this.config.Size.height) || 460}px`;
     }
   }
 
-  private close() {
+  close() {
     this.window.remove();
   }
 
-  AddTab(config: TabConfig): FluentTab {
-    const tabsContainer = this.window.querySelector('.fluent-tabs-container') as HTMLElement;
-    const contentContainer = this.window.querySelector('.fluent-content-container') as HTMLElement;
+  AddTab(config) {
+    const tabsContainer = this.window.querySelector('.fluent-tabs-container');
+    const contentContainer = this.window.querySelector('.fluent-content-container');
     
     const tabButton = document.createElement('div');
     tabButton.className = 'fluent-tab-button';
@@ -709,28 +612,28 @@ class FluentWindow {
     return tab;
   }
 
-  SelectTab(index: number) {
+  SelectTab(index) {
     const tabKeys = Array.from(this.tabs.keys());
     if (index < 1 || index > tabKeys.length) return;
     
     const selectedKey = tabKeys[index - 1];
     
-    // Hide all tabs
     this.tabs.forEach((tab, key) => {
       tab.getContent().style.display = 'none';
-      this.tabButtons.get(key)?.classList.remove('active');
+      const btn = this.tabButtons.get(key);
+      if (btn) btn.classList.remove('active');
     });
     
-    // Show selected tab
     const selectedTab = this.tabs.get(selectedKey);
     if (selectedTab) {
       selectedTab.getContent().style.display = 'block';
-      this.tabButtons.get(selectedKey)?.classList.add('active');
+      const btn = this.tabButtons.get(selectedKey);
+      if (btn) btn.classList.add('active');
       this.currentTab = selectedKey;
     }
   }
 
-  Dialog(config: DialogConfig) {
+  Dialog(config) {
     const overlay = document.createElement('div');
     overlay.className = 'fluent-dialog-overlay';
     
@@ -766,15 +669,17 @@ class FluentWindow {
 }
 
 class Fluent {
-  public Version = '1.0.0';
-  public Options: Record<string, any> = {};
-  public Unloaded = false;
+  constructor() {
+    this.Version = '1.0.0';
+    this.Options = {};
+    this.Unloaded = false;
+  }
 
-  CreateWindow(config: WindowConfig): FluentWindow {
+  CreateWindow(config) {
     return new FluentWindow(config);
   }
 
-  Notify(config: NotificationConfig) {
+  Notify(config) {
     const container = this.getOrCreateNotificationContainer();
     
     const notification = document.createElement('div');
@@ -787,20 +692,18 @@ class Fluent {
     
     container.appendChild(notification);
     
-    // Animate in
     setTimeout(() => notification.classList.add('show'), 10);
     
-    // Auto remove
     if (config.Duration !== null) {
       setTimeout(() => {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
-      }, (config.Duration ?? 5) * 1000);
+      }, (config.Duration !== undefined ? config.Duration : 5) * 1000);
     }
   }
 
-  private getOrCreateNotificationContainer(): HTMLElement {
-    let container = document.querySelector('.fluent-notifications-container') as HTMLElement;
+  getOrCreateNotificationContainer() {
+    let container = document.querySelector('.fluent-notifications-container');
     if (!container) {
       container = document.createElement('div');
       container.className = 'fluent-notifications-container';
@@ -810,12 +713,8 @@ class Fluent {
   }
 }
 
-// Export singleton instance
 const FluentUI = new Fluent();
 
-// For use in browser/Tampermonkey
 if (typeof window !== 'undefined') {
-  (window as any).Fluent = FluentUI;
+  window.Fluent = FluentUI;
 }
-
-export default FluentUI;
